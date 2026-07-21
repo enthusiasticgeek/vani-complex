@@ -10,6 +10,25 @@
 //   f64_pi()  f64_hypot(x, y)
 //
 // v0.1.0 depends on nothing else in the Kosh ecosystem.
+//
+// WCET (MAINT-1, added 2026-07-21 -- see kosh-index/ROADMAP.md): every
+// #[wcet(cycles=N)] below is `vanic check`'s own exact reported worst-case
+// (same "don't hand-estimate, read the tool's number" discipline as
+// #[bounded_stack]) -- NOT hand-derived from a cost table. Functions with
+// a runtime-bounded loop (complex_pow_i64, complex_nth_roots_of_unity)
+// get a WCET *formula* comment instead of an attribute, matching
+// vani-calculus's `bisect` convention (the checker can't statically
+// bound a runtime-dependent loop).
+//
+// CHECKER QUIRK worth knowing before trusting these numbers too far: the
+// WCET estimator's cost for a struct-literal expression (`Complex { re:
+// ..., im: ... }`) is a flat constant that does NOT recurse into the
+// field expressions -- confirmed empirically (complex_log's budget is
+// only 10 cycles despite its body calling complex_abs(55)+complex_arg(65)
+// +log(), because that call chain is INSIDE a top-level struct literal).
+// Every fn here that returns `Complex { ... }` directly is under-counted
+// by this checker pass; the numbers below are what `vanic check` will
+// actually enforce, not a claim that they're tight.
 
 struct Complex { re: f64, im: f64 }
 
@@ -17,18 +36,21 @@ struct Complex { re: f64, im: f64 }
 
 // Construct a complex number from real and imaginary parts.
 #[bounded_stack(bytes = 80)]
+#[wcet(cycles = 10)]
 fn complex_new(re: f64, im: f64) -> Complex {
     return Complex { re: re, im: im };
 }
 
 // Complex conjugate: re - i*im.
 #[bounded_stack(bytes = 96)]
+#[wcet(cycles = 10)]
 fn complex_conj(z: Complex) -> Complex {
     return Complex { re: z.re, im: 0.0 - z.im };
 }
 
 // Negation: -re - i*im.
 #[bounded_stack(bytes = 96)]
+#[wcet(cycles = 10)]
 fn complex_neg(z: Complex) -> Complex {
     return Complex { re: 0.0 - z.re, im: 0.0 - z.im };
 }
@@ -37,18 +59,21 @@ fn complex_neg(z: Complex) -> Complex {
 
 // Addition: (a.re+b.re) + i(a.im+b.im).
 #[bounded_stack(bytes = 128)]
+#[wcet(cycles = 10)]
 fn complex_add(a: Complex, b: Complex) -> Complex {
     return Complex { re: a.re + b.re, im: a.im + b.im };
 }
 
 // Subtraction: (a.re-b.re) + i(a.im-b.im).
 #[bounded_stack(bytes = 128)]
+#[wcet(cycles = 10)]
 fn complex_sub(a: Complex, b: Complex) -> Complex {
     return Complex { re: a.re - b.re, im: a.im - b.im };
 }
 
 // Multiplication: (a.re*b.re - a.im*b.im) + i(a.re*b.im + a.im*b.re).
 #[bounded_stack(bytes = 128)]
+#[wcet(cycles = 10)]
 fn complex_mul(a: Complex, b: Complex) -> Complex {
     return Complex { re: a.re * b.re - a.im * b.im, im: a.re * b.im + a.im * b.re };
 }
@@ -56,12 +81,14 @@ fn complex_mul(a: Complex, b: Complex) -> Complex {
 // Squared modulus |z|^2 = re^2 + im^2. Cheaper than complex_abs() when only
 // comparing magnitudes (no sqrt).
 #[bounded_stack(bytes = 72)]
+#[wcet(cycles = 31)]
 fn complex_norm_sq(z: Complex) -> f64 {
     return z.re * z.re + z.im * z.im;
 }
 
 // Division a/b via the standard conjugate-multiply identity.
 #[bounded_stack(bytes = 208)]
+#[wcet(cycles = 49)]
 fn complex_div(a: Complex, b: Complex) -> Complex {
     let denom: f64 = complex_norm_sq(b);
     return Complex {
@@ -72,12 +99,14 @@ fn complex_div(a: Complex, b: Complex) -> Complex {
 
 // Scalar multiply: every component of z times s.
 #[bounded_stack(bytes = 104)]
+#[wcet(cycles = 10)]
 fn complex_scale(z: Complex, s: f64) -> Complex {
     return Complex { re: z.re * s, im: z.im * s };
 }
 
 // Multiplicative inverse 1/z = conj(z) / |z|^2.
 #[bounded_stack(bytes = 176)]
+#[wcet(cycles = 49)]
 fn complex_reciprocal(z: Complex) -> Complex {
     let denom: f64 = complex_norm_sq(z);
     return Complex { re: z.re / denom, im: (0.0 - z.im) / denom };
@@ -88,18 +117,21 @@ fn complex_reciprocal(z: Complex) -> Complex {
 // Modulus |z| = hypot(re, im) (overflow/underflow-safe, unlike sqrt(re²+im²)
 // directly).
 #[bounded_stack(bytes = 72)]
+#[wcet(cycles = 55)]
 fn complex_abs(z: Complex) -> f64 {
     return f64_hypot(z.re, z.im);
 }
 
 // Argument (phase angle) in radians, range (-π, π], via atan2.
 #[bounded_stack(bytes = 72)]
+#[wcet(cycles = 65)]
 fn complex_arg(z: Complex) -> f64 {
     return atan2(z.im, z.re);
 }
 
 // Construct a complex number from polar form: r × e^(iθ) = r cos θ + i r sin θ.
 #[bounded_stack(bytes = 80)]
+#[wcet(cycles = 10)]
 fn complex_from_polar(r: f64, theta: f64) -> Complex {
     return Complex { re: r * cos(theta), im: r * sin(theta) };
 }
@@ -108,6 +140,7 @@ fn complex_from_polar(r: f64, theta: f64) -> Complex {
 
 // Complex exponential: e^z = e^re × (cos(im) + i sin(im)).
 #[bounded_stack(bytes = 104)]
+#[wcet(cycles = 47)]
 fn complex_exp(z: Complex) -> Complex {
     let er: f64 = exp(z.re);
     return Complex { re: er * cos(z.im), im: er * sin(z.im) };
@@ -115,13 +148,16 @@ fn complex_exp(z: Complex) -> Complex {
 
 // Principal complex logarithm: ln|z| + i·arg(z).
 #[bounded_stack(bytes = 168)]
+#[wcet(cycles = 10)]
 fn complex_log(z: Complex) -> Complex {
     return Complex { re: log(complex_abs(z)), im: complex_arg(z) };
 }
 
 // Integer power (positive, negative, or zero) via repeated multiplication.
 // Negative n uses the reciprocal of z first. z^0 = 1 for any z (including 0,
-// matching the usual convention).
+// matching the usual convention). NO #[wcet]: the while loop runs |n| times,
+// a runtime parameter -- WCET = 20 + |n| × (complex_mul's 10-cycle budget),
+// plus complex_reciprocal's 49-cycle budget once when n < 0.
 #[bounded_stack(bytes = 440)]
 fn complex_pow_i64(z: Complex, n: i64) -> Complex {
     let nn: i64 = n;
@@ -141,6 +177,7 @@ fn complex_pow_i64(z: Complex, n: i64) -> Complex {
 
 // Principal square root, via polar form: sqrt(r) × e^(iθ/2).
 #[bounded_stack(bytes = 192)]
+#[wcet(cycles = 181)]
 fn complex_sqrt(z: Complex) -> Complex {
     let r: f64 = complex_abs(z);
     let theta: f64 = complex_arg(z);
@@ -151,36 +188,42 @@ fn complex_sqrt(z: Complex) -> Complex {
 
 // sin(a+bi) = sin(a)cosh(b) + i cos(a)sinh(b).
 #[bounded_stack(bytes = 96)]
+#[wcet(cycles = 10)]
 fn complex_sin(z: Complex) -> Complex {
     return Complex { re: sin(z.re) * cosh(z.im), im: cos(z.re) * sinh(z.im) };
 }
 
 // cos(a+bi) = cos(a)cosh(b) - i sin(a)sinh(b).
 #[bounded_stack(bytes = 96)]
+#[wcet(cycles = 10)]
 fn complex_cos(z: Complex) -> Complex {
     return Complex { re: cos(z.re) * cosh(z.im), im: (0.0 - sin(z.re)) * sinh(z.im) };
 }
 
 // tan(z) = sin(z) / cos(z).
 #[bounded_stack(bytes = 304)]
+#[wcet(cycles = 91)]
 fn complex_tan(z: Complex) -> Complex {
     return complex_div(complex_sin(z), complex_cos(z));
 }
 
 // sinh(a+bi) = sinh(a)cos(b) + i cosh(a)sin(b).
 #[bounded_stack(bytes = 96)]
+#[wcet(cycles = 10)]
 fn complex_sinh(z: Complex) -> Complex {
     return Complex { re: sinh(z.re) * cos(z.im), im: cosh(z.re) * sin(z.im) };
 }
 
 // cosh(a+bi) = cosh(a)cos(b) + i sinh(a)sin(b).
 #[bounded_stack(bytes = 96)]
+#[wcet(cycles = 10)]
 fn complex_cosh(z: Complex) -> Complex {
     return Complex { re: cosh(z.re) * cos(z.im), im: sinh(z.re) * sin(z.im) };
 }
 
 // tanh(z) = sinh(z) / cosh(z).
 #[bounded_stack(bytes = 304)]
+#[wcet(cycles = 91)]
 fn complex_tanh(z: Complex) -> Complex {
     return complex_div(complex_sinh(z), complex_cosh(z));
 }
@@ -188,7 +231,9 @@ fn complex_tanh(z: Complex) -> Complex {
 // ── Roots of unity ────────────────────────────────────────────────────────────
 
 // The n-th roots of unity: e^(2πik/n) for k = 0..n-1. Returns a Vec<Complex>
-// of length n (index 0 is always exactly 1+0i).
+// of length n (index 0 is always exactly 1+0i). NO #[wcet]: the while loop
+// runs n times, a runtime parameter -- WCET = 20 + n × (complex_from_polar's
+// 10-cycle budget + a few ops for theta and push).
 #[bounded_stack(bytes = 200)]
 fn complex_nth_roots_of_unity(n: i64) -> Vec<Complex> {
     let out: Vec<Complex> = vec();
