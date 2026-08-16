@@ -1,0 +1,29 @@
+{
+  "why_use_this": "Reach for this package the moment a computation needs \\( i = \\sqrt{-1} \\) -- roots of a negative discriminant, AC circuit analysis, Fourier/frequency-domain work (see [vani-signal](https://github.com/enthusiasticgeek/vani-signal), which depends on this package for exactly that), or anywhere a real-only type like `f64` simply can't represent the answer. `Complex` is a plain `{ re: f64, im: f64 }` struct with no heap-owning fields, so it's freely copyable -- every function here takes and returns `Complex` by value, no `ref`/`mut ref` ceremony anywhere, unlike the `Vec<f64>`-based sibling libraries. If your problem never leaves the reals (no square roots of negative numbers, no oscillating phase/frequency content), you don't need this package at all -- reach for it specifically when a real number stops being enough."
+  ,
+  "math_notes": {
+    "complex_conj": "\\( \\bar{z} = a - bi \\) for \\( z = a + bi \\) -- negates the imaginary part only.",
+    "complex_neg": "\\( -z = -a - bi \\) for \\( z = a + bi \\) -- negates both parts.",
+    "complex_add": "\\( (a+bi) + (c+di) = (a+c) + (b+d)i \\) -- componentwise.",
+    "complex_sub": "\\( (a+bi) - (c+di) = (a-c) + (b-d)i \\) -- componentwise.",
+    "complex_mul": "\\( (a+bi)(c+di) = (ac - bd) + (ad + bc)i \\), the standard FOIL expansion using \\( i^2 = -1 \\).",
+    "complex_norm_sq": "\\( |z|^2 = a^2 + b^2 \\) for \\( z = a+bi \\) -- avoids the square root `complex_abs` needs, useful whenever only a comparison or a denominator (as in `complex_div`/`complex_reciprocal`) is needed.",
+    "complex_div": "\\( \\dfrac{a+bi}{c+di} = \\dfrac{(a+bi)(c-di)}{c^2+d^2} = \\dfrac{ac+bd}{c^2+d^2} + \\dfrac{bc-ad}{c^2+d^2}i \\) -- multiply through by the denominator's conjugate to clear the imaginary part from the denominator, then divide by \\( |c+di|^2 \\) (`complex_norm_sq`).",
+    "complex_scale": "\\( s \\cdot (a+bi) = sa + sbi \\) -- real scalar multiplication, componentwise.",
+    "complex_reciprocal": "\\( \\dfrac{1}{z} = \\dfrac{\\bar{z}}{|z|^2} = \\dfrac{a}{a^2+b^2} - \\dfrac{b}{a^2+b^2}i \\) for \\( z = a+bi \\neq 0 \\) -- the \\( n=-1 \\) special case of `complex_div`, conjugate over norm-squared.",
+    "complex_abs": "\\( |z| = \\sqrt{a^2+b^2} = r \\) -- the modulus, i.e. the distance from the origin in the complex plane; the \\( r \\) of \\( z \\)'s polar form \\( r e^{i\\theta} \\).",
+    "complex_arg": "\\( \\arg(z) = \\operatorname{atan2}(b, a) \\in (-\\pi, \\pi] \\) -- the angle from the positive real axis; the \\( \\theta \\) of \\( z \\)'s polar form \\( r e^{i\\theta} \\).",
+    "complex_from_polar": "\\( z = r(\\cos\\theta + i\\sin\\theta) = re^{i\\theta} \\) -- the inverse of the (`complex_abs`, `complex_arg`) pair: rebuilds Cartesian \\( (a,b) \\) from polar \\( (r,\\theta) \\).",
+    "complex_exp": "\\( e^{a+bi} = e^a(\\cos b + i\\sin b) \\) -- Euler's formula, the reason a complex exponential just scales-and-rotates rather than needing anything more exotic than real `exp`/`sin`/`cos`.",
+    "complex_log": "\\( \\log z = \\ln|z| + i\\arg(z) \\) -- the principal branch of the complex logarithm (imaginary part restricted to \\( (-\\pi, \\pi] \\) via `complex_arg`'s own range), the inverse of `complex_exp` on that branch.",
+    "complex_pow_i64": "\\( z^n \\) for integer \\( n \\), via repeated `complex_mul` for \\( n > 0 \\) (and `complex_reciprocal` of \\( z^{|n|} \\) for \\( n < 0 \\)) -- not De Moivre's polar-form formula \\( r^n(\\cos n\\theta + i \\sin n\\theta) \\), though the two agree mathematically.",
+    "complex_sqrt": "\\( \\sqrt{z} = \\sqrt{r}\\, e^{i\\theta/2} \\) -- the principal square root, computed via the polar form (`complex_abs`/`complex_arg` then `complex_from_polar` with the halved angle and square-rooted modulus), always returning the root with non-negative real part.",
+    "complex_sin": "\\( \\sin(a+bi) = \\sin a \\cosh b + i \\cos a \\sinh b \\) -- the complex sine, unbounded in magnitude (unlike real `sin`) because of the `cosh`/`sinh` growth in the imaginary direction.",
+    "complex_cos": "\\( \\cos(a+bi) = \\cos a \\cosh b - i \\sin a \\sinh b \\).",
+    "complex_tan": "\\( \\tan z = \\sin z / \\cos z \\), computed from `complex_sin`/`complex_cos` via `complex_div` -- not a separate closed form.",
+    "complex_sinh": "\\( \\sinh(a+bi) = \\sinh a \\cos b + i \\cosh a \\sin b \\).",
+    "complex_cosh": "\\( \\cosh(a+bi) = \\cosh a \\cos b + i \\sinh a \\sin b \\).",
+    "complex_tanh": "\\( \\tanh z = \\sinh z / \\cosh z \\), computed from `complex_sinh`/`complex_cosh` via `complex_div`.",
+    "complex_nth_roots_of_unity": "The \\( n \\) solutions to \\( z^n = 1 \\): \\( z_k = e^{2\\pi i k / n} = \\cos\\!\\left(\\dfrac{2\\pi k}{n}\\right) + i\\sin\\!\\left(\\dfrac{2\\pi k}{n}\\right) \\) for \\( k = 0, 1, \\ldots, n-1 \\), each built via `complex_from_polar` with radius 1."
+  }
+}
