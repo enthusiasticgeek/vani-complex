@@ -1,29 +1,144 @@
 {
-  "why_use_this": "Reach for this package the moment a computation needs \\( i = \\sqrt{-1} \\) -- roots of a negative discriminant, AC circuit analysis, Fourier/frequency-domain work (see [vani-signal](https://github.com/enthusiasticgeek/vani-signal), which depends on this package for exactly that), or anywhere a real-only type like `f64` simply can't represent the answer. `Complex` is a plain `{ re: f64, im: f64 }` struct with no heap-owning fields, so it's freely copyable -- every function here takes and returns `Complex` by value, no `ref`/`mut ref` ceremony anywhere, unlike the `Vec<f64>`-based sibling libraries. If your problem never leaves the reals (no square roots of negative numbers, no oscillating phase/frequency content), you don't need this package at all -- reach for it specifically when a real number stops being enough."
+  "why_use_this": "Reach for this package the moment a computation needs \\( i = \\sqrt{-1} \\) -- roots of a negative discriminant, AC circuit analysis, Fourier/frequency-domain work (see [vani-signal](https://github.com/enthusiasticgeek/vani-signal), which depends on this package for exactly that), or anywhere a real-only type like `f64` simply can't represent the answer. `Complex` is a plain `{ re: f64, im: f64 }` struct with no heap-owning fields, so it's freely copyable -- every function here takes and returns `Complex` by value, no `ref`/`mut ref` ceremony anywhere, unlike the `Vec<f64>`-based sibling libraries. If your problem never leaves the reals (no square roots of negative numbers, no oscillating phase/frequency content), you don't need this package at all -- reach for it specifically when a real number stops being enough.\n\nA running example, \\(z_1=3+4i\\), threads through the arithmetic/polar notes below -- deliberately a 3-4-5 triangle so \\(|z_1|=5\\) comes out clean."
   ,
   "math_notes": {
-    "complex_conj": "\\( \\bar{z} = a - bi \\) for \\( z = a + bi \\) -- negates the imaginary part only.",
-    "complex_neg": "\\( -z = -a - bi \\) for \\( z = a + bi \\) -- negates both parts.",
-    "complex_add": "\\( (a+bi) + (c+di) = (a+c) + (b+d)i \\) -- componentwise.",
-    "complex_sub": "\\( (a+bi) - (c+di) = (a-c) + (b-d)i \\) -- componentwise.",
-    "complex_mul": "\\( (a+bi)(c+di) = (ac - bd) + (ad + bc)i \\), the standard FOIL expansion using \\( i^2 = -1 \\).",
-    "complex_norm_sq": "\\( |z|^2 = a^2 + b^2 \\) for \\( z = a+bi \\) -- avoids the square root `complex_abs` needs, useful whenever only a comparison or a denominator (as in `complex_div`/`complex_reciprocal`) is needed.",
-    "complex_div": "\\( \\dfrac{a+bi}{c+di} = \\dfrac{(a+bi)(c-di)}{c^2+d^2} = \\dfrac{ac+bd}{c^2+d^2} + \\dfrac{bc-ad}{c^2+d^2}i \\) -- multiply through by the denominator's conjugate to clear the imaginary part from the denominator, then divide by \\( |c+di|^2 \\) (`complex_norm_sq`).",
-    "complex_scale": "\\( s \\cdot (a+bi) = sa + sbi \\) -- real scalar multiplication, componentwise.",
-    "complex_reciprocal": "\\( \\dfrac{1}{z} = \\dfrac{\\bar{z}}{|z|^2} = \\dfrac{a}{a^2+b^2} - \\dfrac{b}{a^2+b^2}i \\) for \\( z = a+bi \\neq 0 \\) -- the \\( n=-1 \\) special case of `complex_div`, conjugate over norm-squared.",
-    "complex_abs": "\\( |z| = \\sqrt{a^2+b^2} = r \\) -- the modulus, i.e. the distance from the origin in the complex plane; the \\( r \\) of \\( z \\)'s polar form \\( r e^{i\\theta} \\).",
-    "complex_arg": "\\( \\arg(z) = \\operatorname{atan2}(b, a) \\in (-\\pi, \\pi] \\) -- the angle from the positive real axis; the \\( \\theta \\) of \\( z \\)'s polar form \\( r e^{i\\theta} \\).",
-    "complex_from_polar": "\\( z = r(\\cos\\theta + i\\sin\\theta) = re^{i\\theta} \\) -- the inverse of the (`complex_abs`, `complex_arg`) pair: rebuilds Cartesian \\( (a,b) \\) from polar \\( (r,\\theta) \\).",
-    "complex_exp": "\\( e^{a+bi} = e^a(\\cos b + i\\sin b) \\) -- Euler's formula, the reason a complex exponential just scales-and-rotates rather than needing anything more exotic than real `exp`/`sin`/`cos`.",
-    "complex_log": "\\( \\log z = \\ln|z| + i\\arg(z) \\) -- the principal branch of the complex logarithm (imaginary part restricted to \\( (-\\pi, \\pi] \\) via `complex_arg`'s own range), the inverse of `complex_exp` on that branch.",
-    "complex_pow_i64": "\\( z^n \\) for integer \\( n \\), via repeated `complex_mul` for \\( n > 0 \\) (and `complex_reciprocal` of \\( z^{|n|} \\) for \\( n < 0 \\)) -- not De Moivre's polar-form formula \\( r^n(\\cos n\\theta + i \\sin n\\theta) \\), though the two agree mathematically.",
-    "complex_sqrt": "\\( \\sqrt{z} = \\sqrt{r}\\, e^{i\\theta/2} \\) -- the principal square root, computed via the polar form (`complex_abs`/`complex_arg` then `complex_from_polar` with the halved angle and square-rooted modulus), always returning the root with non-negative real part.",
-    "complex_sin": "\\( \\sin(a+bi) = \\sin a \\cosh b + i \\cos a \\sinh b \\) -- the complex sine, unbounded in magnitude (unlike real `sin`) because of the `cosh`/`sinh` growth in the imaginary direction.",
-    "complex_cos": "\\( \\cos(a+bi) = \\cos a \\cosh b - i \\sin a \\sinh b \\).",
-    "complex_tan": "\\( \\tan z = \\sin z / \\cos z \\), computed from `complex_sin`/`complex_cos` via `complex_div` -- not a separate closed form.",
-    "complex_sinh": "\\( \\sinh(a+bi) = \\sinh a \\cos b + i \\cosh a \\sin b \\).",
-    "complex_cosh": "\\( \\cosh(a+bi) = \\cosh a \\cos b + i \\sinh a \\sin b \\).",
-    "complex_tanh": "\\( \\tanh z = \\sinh z / \\cosh z \\), computed from `complex_sinh`/`complex_cosh` via `complex_div`.",
-    "complex_nth_roots_of_unity": "The \\( n \\) solutions to \\( z^n = 1 \\): \\( z_k = e^{2\\pi i k / n} = \\cos\\!\\left(\\dfrac{2\\pi k}{n}\\right) + i\\sin\\!\\left(\\dfrac{2\\pi k}{n}\\right) \\) for \\( k = 0, 1, \\ldots, n-1 \\), each built via `complex_from_polar` with radius 1."
+    "complex_conj": {
+      "intuition": "Flip the sign of the imaginary part only -- geometrically, this reflects the point across the real (horizontal) axis in the complex plane.",
+      "formula": "\\[ \\bar{z} = a-bi \\quad \\text{for } z=a+bi \\]",
+      "example": "\\(\\overline{3+4i} = 3-4i\\).",
+      "why": "Conjugation is the trick behind `complex_div`/`complex_reciprocal`'s whole approach: multiplying \\(z\\) by \\(\\bar{z}\\) always produces a REAL number (\\(a^2+b^2\\)), which is what lets you clear the imaginary part out of a denominator."
+    },
+    "complex_neg": {
+      "intuition": "Flip the sign of BOTH parts -- geometrically, rotates the point 180° through the origin.",
+      "formula": "\\[ -z = -a-bi \\]",
+      "example": "\\(-(3+4i) = -3-4i\\).",
+      "why": "Unlike `complex_conj` (which only flips the imaginary part, reflecting across the horizontal axis), negation flips BOTH, reflecting through the origin entirely -- two visually different operations that are easy to confuse by name alone."
+    },
+    "complex_add": {
+      "intuition": "Add real parts together and imaginary parts together, completely independently -- geometrically, this is exactly vector addition: place one arrow at the tip of the other and see where you land.",
+      "formula": "\\[ (a+bi)+(c+di) = (a+c)+(b+d)i \\]",
+      "example": "\\((3+4i)+(1+2i) = (3+1)+(4+2)i = 4+6i\\).",
+      "why": "Complex addition behaving exactly like 2D vector addition is why complex numbers are such a natural fit for anything already thought of as a 2D vector (AC circuit phasors, 2D rotations) -- the arithmetic you already know from vectors carries over directly."
+    },
+    "complex_sub": {
+      "intuition": "Same as `complex_add`, with subtraction in each component.",
+      "formula": "\\[ (a+bi)-(c+di) = (a-c)+(b-d)i \\]",
+      "example": "\\((3+4i)-(1+2i) = (3-1)+(4-2)i = 2+2i\\).",
+      "why": "Geometrically, \\(z_1-z_2\\) is the vector pointing FROM \\(z_2\\) TO \\(z_1\\) -- useful for finding the direction and distance between two points in the complex plane, the same way vector subtraction works for ordinary 2D points."
+    },
+    "complex_mul": {
+      "intuition": "Multiply the two complex numbers out like two binomials (FOIL), then simplify using the one special rule of complex arithmetic: \\(i^2=-1\\).",
+      "formula": "\\[ (a+bi)(c+di) = (ac-bd)+(ad+bc)i \\]",
+      "example": "\\((3+4i)(1+2i) = 3\\times1 + 3\\times2i + 4i\\times1 + 4i\\times2i = 3+6i+4i+8i^2 = 3+10i-8 = -5+10i\\) (using \\(i^2=-1\\) on the last term). Matches the formula directly: \\((3\\times1-4\\times2)+(3\\times2+4\\times1)i = (3-8)+(6+4)i=-5+10i\\).",
+      "why": "Geometrically, multiplying complex numbers MULTIPLIES their magnitudes and ADDS their angles -- a fact that isn't obvious from this Cartesian formula at all, but becomes clear once you look at multiplication in polar form (see `complex_from_polar`)."
+    },
+    "complex_norm_sq": {
+      "intuition": "The squared distance from the origin -- cheaper to compute than the true distance (`complex_abs`) because it skips the square root, useful whenever you only need to COMPARE magnitudes or use one as a denominator.",
+      "formula": "\\[ |z|^2 = a^2+b^2 \\]",
+      "example": "\\(|3+4i|^2 = 3^2+4^2 = 9+16=25\\).",
+      "why": "This is exactly the \\(25\\) that shows up as the denominator in `complex_div`'s and `complex_reciprocal`'s worked examples below -- both are built directly on top of this function."
+    },
+    "complex_div": {
+      "intuition": "You can't directly \"divide\" by a complex number the way you divide by a real one -- the standard trick is to multiply both the numerator and denominator by the denominator's conjugate, which turns the denominator into a plain real number (via `complex_norm_sq`) that ordinary division handles fine.",
+      "formula": "\\[ \\dfrac{a+bi}{c+di} = \\dfrac{(a+bi)(c-di)}{c^2+d^2} = \\dfrac{ac+bd}{c^2+d^2} + \\dfrac{bc-ad}{c^2+d^2}i \\]",
+      "example": "\\(\\dfrac{3+4i}{1+2i}\\): multiply top and bottom by \\(1-2i\\): numerator \\((3+4i)(1-2i) = 3-6i+4i-8i^2 = 3-2i+8=11-2i\\); denominator \\(1^2+2^2=5\\). Result: \\(\\dfrac{11-2i}{5} = 2.2-0.4i\\).",
+      "why": "This same conjugate-multiplication trick is exactly what `complex_reciprocal` does as the special case \\(1/z\\) (i.e. \\(a=1,b=0\\)) -- `complex_div` is the more general form."
+    },
+    "complex_scale": {
+      "intuition": "Multiplying by a plain real number stretches (or shrinks, or flips if negative) the complex number without rotating it at all -- both parts scale by the same factor.",
+      "formula": "\\[ s\\cdot(a+bi) = sa+sbi \\]",
+      "example": "\\(2\\times(3+4i) = 6+8i\\).",
+      "why": "Because this is the \\(n=1\\)-dimensional special case of `complex_mul` where the second operand has zero imaginary part, scaling never rotates the result -- multiplying by a genuinely complex number (nonzero imaginary part) is what introduces rotation, as `complex_mul`'s own note explains."
+    },
+    "complex_reciprocal": {
+      "intuition": "The same conjugate-over-norm-squared trick as `complex_div`, specialized to \"1 divided by\" a single complex number.",
+      "formula": "\\[ \\dfrac1z = \\dfrac{\\bar z}{|z|^2} = \\dfrac{a}{a^2+b^2} - \\dfrac{b}{a^2+b^2}i \\quad (z\\ne0) \\]",
+      "example": "\\(\\dfrac{1}{3+4i} = \\dfrac{3-4i}{25} = 0.12 - 0.16i\\) (using \\(|3+4i|^2=25\\) from `complex_norm_sq`'s example).",
+      "why": "Sanity check: multiply the original \\(z_1=3+4i\\) by this reciprocal and you should get back \\(1\\) -- \\((3+4i)(0.12-0.16i) = (3\\times0.12 - 4\\times(-0.16)) + (\\ldots)i = (0.36+0.64)+0i = 1.0+0i\\), confirming this really is \\(1/z_1\\)."
+    },
+    "complex_abs": {
+      "intuition": "The straight-line distance from the origin to the point \\((a,b)\\) -- ordinary Pythagorean distance, since the complex plane IS just the ordinary 2D plane with a name for each axis.",
+      "formula": "\\[ |z| = \\sqrt{a^2+b^2} \\]",
+      "example": "\\(|3+4i| = \\sqrt{9+16} = \\sqrt{25}=5\\) -- the same 3-4-5 right triangle this running example was chosen for.",
+      "why": "This is the \\(r\\) in \\(z\\)'s polar form \\(re^{i\\theta}\\) (see `complex_from_polar`) -- every complex number is uniquely described by how FAR it is from the origin (this) and which DIRECTION it points (`complex_arg`)."
+    },
+    "complex_arg": {
+      "intuition": "The angle (measured counterclockwise from the positive real axis) that the point \\((a,b)\\) sits at -- the same angle you'd read off a compass if the positive real axis pointed \"east\".",
+      "formula": "\\[ \\arg(z) = \\operatorname{atan2}(b,a) \\in (-\\pi,\\pi] \\]",
+      "example": "\\(\\arg(3+4i) = \\operatorname{atan2}(4,3) \\approx 0.9273\\) radians (about \\(53.13°\\)) -- the angle of a 3-4-5 right triangle's non-right angle opposite the side of length 4.",
+      "why": "Using \\(\\operatorname{atan2}\\) rather than plain \\(\\arctan(b/a)\\) is essential: plain arctan can't tell \\((3,4)\\) apart from \\((-3,-4)\\) (both give the same \\(b/a\\) ratio), but they point in completely opposite directions -- `atan2` uses BOTH signs to place the angle in the correct quadrant."
+    },
+    "complex_from_polar": {
+      "intuition": "The reverse of the (`complex_abs`, `complex_arg`) pair: given a distance and a direction, place the point.",
+      "formula": "\\[ z = r(\\cos\\theta+i\\sin\\theta) \\]",
+      "example": "Using \\(r=5\\), \\(\\theta=\\operatorname{atan2}(4,3)\\approx0.9273\\) (from \\(z_1=3+4i\\)'s own polar form): \\(5\\cos(0.9273)\\approx5\\times0.6=3\\) and \\(5\\sin(0.9273)\\approx5\\times0.8=4\\), recovering \\((3,4)\\), i.e. \\(z_1\\) itself.",
+      "why": "Round-tripping through `complex_abs`/`complex_arg` and back through `complex_from_polar` is a useful sanity check that these three functions agree with each other -- and this Cartesian-to-polar-and-back conversion is exactly what `complex_sqrt` uses internally to take a square root."
+    },
+    "complex_exp": {
+      "intuition": "A complex exponential doesn't grow explosively the way a real exponential can -- Euler's formula reveals that the imaginary part of the exponent only ever ROTATES, while the real part of the exponent controls SCALING. So \\(e^{a+bi}\\) is \"scale by \\(e^a\\), then rotate by \\(b\\) radians.\"",
+      "formula": "\\[ e^{a+bi} = e^a(\\cos b+i\\sin b) \\]",
+      "example": "The single most famous instance: \\(z=i\\pi\\) (\\(a=0,b=\\pi\\)). \\(e^{i\\pi} = e^0(\\cos\\pi+i\\sin\\pi) = 1\\times(-1+0i) = -1\\) -- Euler's identity, \\(e^{i\\pi}=-1\\), or as it's often written, \\(e^{i\\pi}+1=0\\), tying together five of the most fundamental constants in mathematics in one equation.",
+      "why": "Because the real part of the exponent (\\(a\\)) controls scaling completely SEPARATELY from how the imaginary part (\\(b\\)) controls rotation, a purely imaginary exponent (\\(a=0\\), as in \\(e^{i\\pi}\\)) always lands EXACTLY on the unit circle (magnitude 1) -- it can rotate to any angle, but it never scales at all."
+    },
+    "complex_log": {
+      "intuition": "The inverse of `complex_exp`, restricted to one consistent choice of angle (since adding any multiple of \\(2\\pi\\) to an angle gives the same point back, the complex logarithm is technically multi-valued -- this function picks the PRINCIPAL branch, matching `complex_arg`'s own \\((-\\pi,\\pi]\\) range).",
+      "formula": "\\[ \\log z = \\ln|z| + i\\arg(z) \\]",
+      "example": "\\(\\log(3+4i) = \\ln|3+4i| + i\\arg(3+4i) = \\ln(5) + i\\times0.9273 \\approx 1.6094 + 0.9273i\\) (reusing `complex_abs`'s \\(5\\) and `complex_arg`'s \\(0.9273\\) from earlier).",
+      "why": "Because this is restricted to the principal branch, `complex_exp(complex_log(z))` always recovers \\(z\\) exactly, but `complex_log(complex_exp(z))` does NOT always recover the original \\(z\\) -- only when \\(z\\)'s imaginary part already lies within \\((-\\pi,\\pi]\\). This asymmetry is a direct, unavoidable consequence of the logarithm being multi-valued in general and this function picking just one branch."
+    },
+    "complex_pow_i64": {
+      "intuition": "Raising to an integer power is just repeated multiplication (or repeated reciprocal-then-multiplication for a negative exponent) -- no special formula needed beyond `complex_mul` itself, applied several times.",
+      "formula": "\\(z^n\\) via repeated `complex_mul` (or `complex_reciprocal` of \\(z^{|n|}\\) for negative \\(n\\)) -- not De Moivre's polar formula, though the two always agree.",
+      "example": "\\((3+4i)^2\\), via `complex_mul` applied to \\(z_1\\) with itself: \\((3+4i)(3+4i) = (3\\times3-4\\times4)+(3\\times4+4\\times3)i = (9-16)+(12+12)i = -7+24i\\).",
+      "why": "This result, \\(-7+24i\\), reappears directly in `complex_sqrt`'s worked example below -- taking the square root of \\(-7+24i\\) should recover \\(3+4i\\), the number we just squared to get there, a nice built-in consistency check between the two functions."
+    },
+    "complex_sqrt": {
+      "intuition": "There's no simple Cartesian formula for a complex square root, but polar form makes it easy: halve the angle and take the square root of the distance -- since squaring in polar form DOUBLES the angle and squares the distance, halving/rooting is exactly the inverse operation.",
+      "formula": "\\[ \\sqrt{z} = \\sqrt{r}\\,e^{i\\theta/2} \\]",
+      "example": "Take the square root of \\(-7+24i\\) -- exactly `complex_pow_i64`'s result for \\((3+4i)^2\\) above, so we already know the answer should be \\(3+4i\\) (or its negation). \\(|-7+24i| = \\sqrt{49+576}=\\sqrt{625}=25\\), so \\(\\sqrt{r}=\\sqrt{25}=5\\). Halving the angle and converting back via `complex_from_polar` with radius \\(5\\) lands back on \\((3,4)\\), i.e. \\(3+4i\\) -- confirmed algebraically by simply checking \\((3+4i)^2=-7+24i\\) directly, which `complex_pow_i64`'s example already verified.",
+      "why": "There are always TWO square roots of any nonzero complex number (here, \\(3+4i\\) and its negation \\(-3-4i\\), since both square to the same value) -- this function returns the PRINCIPAL one specifically, the one with non-negative real part, resolving the ambiguity by convention rather than returning both."
+    },
+    "complex_sin": {
+      "intuition": "Unlike the real sine (always trapped between \\(-1\\) and \\(1\\)), the complex sine can grow arbitrarily large -- because it's built from `sinh`/`cosh`, which grow WITHOUT bound, in the imaginary direction.",
+      "formula": "\\[ \\sin(a+bi) = \\sin a\\cosh b + i\\cos a\\sinh b \\]",
+      "example": "Take a PURELY IMAGINARY input, \\(z=2i\\) (so \\(a=0,b=2\\)): \\(\\sin(2i) = \\sin(0)\\cosh(2) + i\\cos(0)\\sinh(2) = 0 + i\\times1\\times\\sinh(2) = i\\sinh(2) \\approx 3.627i\\) -- a value with magnitude well OVER \\(1\\), something the real sine could never produce.",
+      "why": "This unboundedness is a genuine, important difference from real trigonometry -- code written assuming \\(|\\sin(z)|\\le1\\) (a safe assumption for real \\(z\\)) would silently give wrong results if \\(z\\) ever has a nonzero imaginary part."
+    },
+    "complex_cos": {
+      "intuition": "Same unbounded-via-cosh/sinh structure as `complex_sin`, for cosine.",
+      "formula": "\\[ \\cos(a+bi) = \\cos a\\cosh b - i\\sin a\\sinh b \\]",
+      "example": "At \\(z=2i\\) (\\(a=0,b=2\\)): \\(\\cos(2i) = \\cos(0)\\cosh(2) - i\\sin(0)\\sinh(2) = 1\\times\\cosh(2) - 0 = \\cosh(2) \\approx 3.762\\) -- purely REAL (no imaginary part at all, since \\(\\sin(0)=0\\) kills that term), but with magnitude well over \\(1\\), again something impossible for the real cosine.",
+      "why": "Notice \\(\\cos(2i)\\) came out purely real while `complex_sin`'s \\(\\sin(2i)\\) came out purely imaginary -- a nice illustration of the identity \\(\\cos(bi)=\\cosh(b)\\) and \\(\\sin(bi)=i\\sinh(b)\\) for purely imaginary inputs, a special case worth remembering."
+    },
+    "complex_tan": {
+      "intuition": "No separate formula needed -- tangent is just sine divided by cosine, computed from values these two functions already know how to produce.",
+      "formula": "\\[ \\tan z = \\sin z/\\cos z \\]",
+      "example": "At \\(z=2i\\): \\(\\tan(2i) = \\sin(2i)/\\cos(2i) = i\\sinh(2)/\\cosh(2) = i\\tanh(2) \\approx 0.964i\\) (reusing `complex_sin`'s and `complex_cos`'s results at the same point).",
+      "why": "Because this is built directly from `complex_sin`/`complex_cos` via `complex_div`, it inherits `complex_div`'s one caveat for free: it's undefined wherever \\(\\cos z=0\\), the complex generalization of the real tangent's familiar vertical asymptotes."
+    },
+    "complex_sinh": {
+      "intuition": "The hyperbolic sine's complex generalization -- structurally the mirror image of `complex_sin`'s formula, with `sin`/`cos` and `sinh`/`cosh` swapping roles.",
+      "formula": "\\[ \\sinh(a+bi) = \\sinh a\\cos b + i\\cosh a\\sin b \\]",
+      "example": "At \\(z=2i\\) (\\(a=0,b=2\\)): \\(\\sinh(2i) = \\sinh(0)\\cos(2) + i\\cosh(0)\\sin(2) = 0 + i\\times1\\times\\sin(2) \\approx 0.909i\\) -- purely imaginary, and this time BOUNDED (since it's built from the ordinary, bounded real sine, not sinh).",
+      "why": "Compare directly with `complex_sin(2i)\\approx3.627i` -- `complex_sinh` at a purely imaginary input stays modest while `complex_sin` at the same input grows large, the exact opposite of their usual real-axis behavior, because swapping which trig identity leads and which follows swaps which one inherits the unbounded growth."
+    },
+    "complex_cosh": {
+      "intuition": "Same swapped-roles structure as `complex_sinh`, for hyperbolic cosine.",
+      "formula": "\\[ \\cosh(a+bi) = \\cosh a\\cos b + i\\sinh a\\sin b \\]",
+      "example": "At \\(z=2i\\): \\(\\cosh(2i) = \\cosh(0)\\cos(2) + i\\sinh(0)\\sin(2) = 1\\times\\cos(2) + 0 \\approx -0.416\\) -- purely real, and bounded like an ordinary cosine, since \\(\\cos(2)\\) itself is always in \\([-1,1]\\).",
+      "why": "This identity, \\(\\cosh(bi)=\\cos(b)\\), is exactly why hyperbolic and ordinary trigonometric functions are often described as \"the same functions, rotated 90° into the complex plane\" -- evaluating `complex_cosh` at a purely imaginary input literally IS evaluating the real cosine."
+    },
+    "complex_tanh": {
+      "intuition": "Same ratio idea as `complex_tan`, for the hyperbolic functions.",
+      "formula": "\\[ \\tanh z = \\sinh z/\\cosh z \\]",
+      "example": "At \\(z=2i\\): \\(\\tanh(2i) = \\sinh(2i)/\\cosh(2i) = i\\sin(2)/\\cos(2) = i\\tan(2) \\approx -2.185i\\) (using `complex_sinh`'s and `complex_cosh`'s results at the same point, and noting \\(\\tan(2)\\) is negative since 2 radians is past \\(\\pi/2\\)).",
+      "why": "Built from `complex_sinh`/`complex_cosh` via `complex_div`, exactly mirroring how `complex_tan` is built from `complex_sin`/`complex_cos` -- the same composition pattern applied to the hyperbolic side."
+    },
+    "complex_nth_roots_of_unity": {
+      "intuition": "The solutions to \\(z^n=1\\) are always \\(n\\) points spaced EQUALLY around the unit circle -- picture a clock face with \\(n\\) evenly-spaced marks instead of 12.",
+      "formula": "\\[ z_k = e^{2\\pi ik/n} \\quad k=0,1,\\ldots,n-1 \\]",
+      "example": "For \\(n=4\\): \\(z_0=e^0=1\\). \\(z_1=e^{i\\pi/2}=\\cos(90°)+i\\sin(90°)=i\\). \\(z_2=e^{i\\pi}=-1\\) (Euler's identity again, from `complex_exp`'s example, at exactly this angle). \\(z_3=e^{i3\\pi/2}=-i\\). So the four 4th roots of unity are \\(\\{1,\\,i,\\,-1,\\,-i\\}\\) -- the four \"compass points\" of the unit circle, each 90° apart. Check: \\(i^4=(i^2)^2=(-1)^2=1\\), confirming \\(i\\) really is a 4th root of unity.",
+      "why": "These roots always come in this evenly-spaced pattern regardless of \\(n\\) -- doubling \\(n\\) to 8 would give 8 points 45° apart instead, always covering the full circle exactly once, which is why they're called roots of UNITY (they all satisfy \\(z^n=1\\)) and why they show up constantly in signal processing (the FFT's \"twiddle factors\", see [vani-signal](https://github.com/enthusiasticgeek/vani-signal), are built from exactly these points)."
+    }
   }
 }
