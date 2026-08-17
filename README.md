@@ -7,6 +7,8 @@ freely copyable -- no `ref`/`mut ref` ceremony anywhere in this API, unlike the
 `Vec<f64>`-based sibling libraries ([vani-matrix](https://github.com/enthusiasticgeek/vani-matrix),
 [vani-calculus](https://github.com/enthusiasticgeek/vani-calculus)).
 
+**API reference / tutorial:** <https://enthusiasticgeek.github.io/vani-complex/>
+
 ## Add to your project
 
 ```toml
