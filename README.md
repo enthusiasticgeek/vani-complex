@@ -1,6 +1,6 @@
 # vani-complex
 
-Complex number library for the [vāṇी compiler](https://github.com/enthusiasticgeek/vani-compiler).
+Complex number library for the [vāṇī compiler](https://github.com/enthusiasticgeek/vani-compiler).
 
 `Complex` is a plain `{ re: f64, im: f64 }` struct with no heap-owning fields, so it's
 freely copyable -- no `ref`/`mut ref` ceremony anywhere in this API, unlike the
@@ -44,7 +44,7 @@ with no special handling needed) -- see `complex_nth_roots_of_unity`, which retu
 
 ## What this library does NOT provide
 
-These are already vāṇी compiler builtins — call them directly, no import needed:
+These are already vāṇī compiler builtins — call them directly, no import needed:
 
 `sin` `cos` `tan` `sinh` `cosh` `tanh` `atan2` `exp` `log` `sqrt` `abs`
 `f64_pi()` `f64_hypot(x, y)`

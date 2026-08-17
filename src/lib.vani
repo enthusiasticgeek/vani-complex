@@ -4,7 +4,7 @@
 // heap-owning fields, so it is Copy (freely passable/reusable by value,
 // no `ref`/`mut ref` ceremony needed anywhere in this API).
 //
-// IMPORTANT — do NOT reimplement vāṇी compiler builtins.
+// IMPORTANT — do NOT reimplement vāṇī compiler builtins.
 // Already available as builtins (call directly, never redeclare here):
 //   sin cos tan sinh cosh tanh atan2 exp log sqrt abs
 //   f64_pi()  f64_hypot(x, y)
